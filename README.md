@@ -1,6 +1,6 @@
 # peak ▲
 
-The official CLI for [Himalaya](https://8848lab.org) — by 8848 Labs.
+The official CLI for [Himalaya](https://8848lab.org) — by 8848 Lab.
 
 Deploy and manage your infrastructure from the terminal.
 

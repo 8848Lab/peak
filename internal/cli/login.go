@@ -9,7 +9,7 @@ import (
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authenticate with your 8848 Labs account",
+	Short: "Authenticate with your 8848 Lab account",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		tag := lipgloss.NewStyle().Foreground(orange).Bold(true)
 		dim := lipgloss.NewStyle().Foreground(lipgloss.Color("#6b6b6b"))
