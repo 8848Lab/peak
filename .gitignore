@@ -1,3 +1,4 @@
 peak
 *.exe
 .DS_Store
+npm/dist/

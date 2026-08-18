@@ -1,0 +1,16 @@
+{
+  "name": "@8848lab/peak",
+  "version": "0.1.0-beta.2",
+  "description": "The official CLI for 8848 Lab",
+  "bin": {
+    "peak": "bin/peak.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
