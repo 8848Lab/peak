@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - Every wire type in this plan (JSON field names, the device-flow response shape, `DeploymentRead.source`, etc.) matches the backend plan's schemas exactly — see that plan's Task 4 (`DeviceStartResponse`/`DevicePollResponse`), Task 6 (`DeploymentRead`), and Task 5 (`ProjectRead`). The query-string/JSON field is `user_code` everywhere, not `code` (the backend plan's Global Constraints section resolves an inconsistency in the spec's own prose in favor of `user_code`; this plan follows that resolution).
+- `GET /auth/device/poll?device_code=...` is `POST /auth/device/poll` with a JSON body `{"device_code": "..."}`, not a GET with a query param — the backend plan's final-review fix wave moved it off the query string (a bearer-equivalent secret in a URL lands in access logs) before this plan was ever implemented, so `PollDeviceAuth` is written against the POST contract from the start.
 - The device-code poll `interval` and `expires_in` returned by `POST /auth/device/start` are authoritative — the CLI must use the server-supplied values for its poll cadence and its own give-up deadline, not hardcode `3`/`600` a second time (even though those happen to be the current server-side constants).
 - No Go tests exist in this repo today. Every new file in this plan gets a `_test.go` using `net/http/httptest.Server` to stand in for Himalaya — never a live network call in a test.
 - Bubbletea view/update logic is not meaningfully unit-testable and isn't tested directly in this plan — every real decision (what HTTP call to make, how to parse a response, what state to transition to) lives in plain functions (`internal/api`, `internal/archive`, `pkg/config`, `resolveDeploymentID`, `resolveProjectLink`) that the tests do reach.
@@ -406,10 +407,18 @@ func TestStartDeviceAuth(t *testing.T) {
 	}
 }
 
-func TestPollDeviceAuthSendsDeviceCodeAsQueryParam(t *testing.T) {
+func TestPollDeviceAuthSendsDeviceCodeAsJSONBody(t *testing.T) {
 	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("device_code") != "dc123" {
-			t.Errorf("missing/wrong device_code query param: %s", r.URL.RawQuery)
+		if r.Method != http.MethodPost || r.URL.Path != "/auth/device/poll" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		body, _ := io.ReadAll(r.Body)
+		var req struct {
+			DeviceCode string `json:"device_code"`
+		}
+		json.Unmarshal(body, &req)
+		if req.DeviceCode != "dc123" {
+			t.Errorf("missing/wrong device_code in body: %s", string(body))
 		}
 		json.NewEncoder(w).Encode(DevicePollResponse{Status: "pending"})
 	})
@@ -624,7 +633,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -745,8 +753,10 @@ func (c *Client) StartDeviceAuth() (*DeviceStartResponse, error) {
 
 func (c *Client) PollDeviceAuth(deviceCode string) (*DevicePollResponse, error) {
 	var out DevicePollResponse
-	path := "/auth/device/poll?device_code=" + url.QueryEscape(deviceCode)
-	if err := c.doJSON(http.MethodGet, path, nil, &out); err != nil {
+	body := struct {
+		DeviceCode string `json:"device_code"`
+	}{DeviceCode: deviceCode}
+	if err := c.doJSON(http.MethodPost, "/auth/device/poll", body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
