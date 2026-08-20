@@ -25,11 +25,9 @@ func TarGz(dir string, w io.Writer) error {
 	}
 
 	gzw := gzip.NewWriter(w)
-	defer gzw.Close()
 	tw := tar.NewWriter(gzw)
-	defer tw.Close()
 
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	walkErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -78,4 +76,15 @@ func TarGz(dir string, w io.Writer) error {
 		_, err = io.Copy(tw, f)
 		return err
 	})
+
+	closeTarErr := tw.Close()
+	closeGzErr := gzw.Close()
+
+	if walkErr != nil {
+		return walkErr
+	}
+	if closeTarErr != nil {
+		return closeTarErr
+	}
+	return closeGzErr
 }
