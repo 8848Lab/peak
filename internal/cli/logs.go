@@ -11,6 +11,17 @@ import (
 	"github.com/8848lab/peak/pkg/config"
 )
 
+// logSource identifies which log stream a fetchLogs call read from, so the
+// --follow loop knows to reset its print offset when the source changes
+// (build logs and container logs are unrelated strings, not a single
+// continuously-growing stream).
+type logSource int
+
+const (
+	sourceBuild logSource = iota
+	sourceContainer
+)
+
 var logsCmd = &cobra.Command{
 	Use:   "logs [deployment-id]",
 	Short: "Show logs for a deployment",
@@ -40,10 +51,10 @@ var logsCmd = &cobra.Command{
 		tag := lipgloss.NewStyle().Foreground(orange).Bold(true)
 		fmt.Printf("%s  logs for %s\n\n", tag.Render("▲ peak"), deploymentID)
 
-		fetchLogs := func() (string, error) {
+		fetchLogs := func() (string, logSource, error) {
 			deployment, err := client.GetDeployment(deploymentID)
 			if err != nil {
-				return "", err
+				return "", sourceBuild, err
 			}
 			logs := ""
 			if deployment.Logs != nil {
@@ -51,14 +62,14 @@ var logsCmd = &cobra.Command{
 			}
 			if deployment.Status == "ready" {
 				if containerLogs, err := client.GetContainerLogs(deploymentID); err == nil && containerLogs != "" {
-					logs = containerLogs
+					return containerLogs, sourceContainer, nil
 				}
 			}
-			return logs, nil
+			return logs, sourceBuild, nil
 		}
 
 		if !follow {
-			logs, err := fetchLogs()
+			logs, _, err := fetchLogs()
 			if err != nil {
 				return fmt.Errorf("could not fetch logs: %w", err)
 			}
@@ -68,10 +79,15 @@ var logsCmd = &cobra.Command{
 
 		fmt.Println(dim.Render("  (--follow enabled, press ctrl+c to stop)"))
 		var lastLen int
+		var lastSource logSource = sourceBuild
 		for {
-			logs, err := fetchLogs()
+			logs, source, err := fetchLogs()
 			if err != nil {
 				return fmt.Errorf("could not fetch logs: %w", err)
+			}
+			if source != lastSource {
+				lastLen = 0
+				lastSource = source
 			}
 			if len(logs) > lastLen {
 				fmt.Print(logs[lastLen:])
