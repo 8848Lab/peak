@@ -5,30 +5,61 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+
+	"github.com/8848lab/peak/internal/api"
+	"github.com/8848lab/peak/pkg/config"
 )
 
 var statusCmd = &cobra.Command{
-	Use:   "status [project]",
+	Use:   "status [deployment-id]",
 	Short: "Show deployment status and health",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project := "your-project"
+		var arg string
 		if len(args) > 0 {
-			project = args[0]
+			arg = args[0]
 		}
 
-		label := lipgloss.NewStyle().Foreground(lipgloss.Color("#6b6b6b"))
+		cfg, err := config.Load()
+		if err != nil {
+			return err
+		}
+		if cfg.Token == "" {
+			return fmt.Errorf("not logged in — run `peak login` first")
+		}
+		client := api.NewClient(cfg.APIBaseURL, cfg.Token)
+
+		deploymentID, err := resolveDeploymentID(client, arg)
+		if err != nil {
+			return err
+		}
+
+		deployment, err := client.GetDeployment(deploymentID)
+		if err != nil {
+			return fmt.Errorf("could not fetch status: %w", err)
+		}
+
+		label := lipgloss.NewStyle().Foreground(mutedText)
 		value := lipgloss.NewStyle().Foreground(white).Bold(true)
-		okStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#4caf50")).Bold(true)
+		statusStyle := lipgloss.NewStyle().Bold(true)
+		switch deployment.Status {
+		case "ready":
+			statusStyle = statusStyle.Foreground(green)
+		case "failed":
+			statusStyle = statusStyle.Foreground(lipgloss.Color("#e05252"))
+		default:
+			statusStyle = statusStyle.Foreground(orange)
+		}
+
+		url := "—"
+		if deployment.DeploymentURL != nil {
+			url = *deployment.DeploymentURL
+		}
 
 		fmt.Printf("\n  %s\n\n", lipgloss.NewStyle().Foreground(orange).Bold(true).Render("▲ peak status"))
-		fmt.Printf("  %s  %s\n", label.Render("project "), value.Render(project))
-		fmt.Printf("  %s  %s\n", label.Render("status  "), okStyle.Render("● healthy"))
-		fmt.Printf("  %s  %s\n", label.Render("url     "), value.Render(project+".8848.app"))
-		fmt.Printf("  %s  %s\n", label.Render("region  "), value.Render("eu-west-1"))
-		fmt.Printf("  %s  %s\n\n", label.Render("deploy  "), value.Render("just now"))
-
-		// TODO: fetch real status from Himalaya API
+		fmt.Printf("  %s  %s\n", label.Render("deployment"), value.Render(deployment.ID))
+		fmt.Printf("  %s  %s\n", label.Render("status    "), statusStyle.Render("● "+deployment.Status))
+		fmt.Printf("  %s  %s\n\n", label.Render("url       "), value.Render(url))
 
 		return nil
 	},
