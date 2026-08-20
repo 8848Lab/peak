@@ -17,19 +17,22 @@ $ peak login
 
 ```
 peak/
-├── cmd/peak/          # Entrypoint (main.go)
+├── cmd/peak/            # Entrypoint (main.go)
 ├── internal/
-│   ├── cli/           # All cobra commands
-│   │   ├── root.go    # Root command + Execute()
-│   │   ├── deploy.go  # `peak deploy` with bubbletea UI
-│   │   ├── logs.go    # `peak logs`
-│   │   ├── status.go  # `peak status`
-│   │   └── login.go   # `peak login`
-│   └── api/
-│       └── client.go  # Himalaya API client
+│   ├── cli/             # All cobra commands
+│   │   ├── root.go      # Root command + Execute()
+│   │   ├── deploy.go    # `peak deploy` with bubbletea UI, project-link resolution
+│   │   ├── logs.go      # `peak logs` — polls build/container logs, --follow
+│   │   ├── status.go    # `peak status` — polls deployment status
+│   │   ├── resolve.go   # resolveDeploymentID — shared by logs/status
+│   │   └── login.go     # `peak login` — device-code auth flow
+│   ├── api/
+│   │   └── client.go    # Himalaya API client (device auth, projects, deployments)
+│   └── archive/
+│       └── archive.go   # tar.gz archiving of the current project for deploy
 └── pkg/
     └── config/
-        └── config.go  # Config + token storage (~/.peak/)
+        └── config.go    # Token storage (~/.peak/) + per-directory project link (.peak/project.json)
 ```
 
 ## Stack
@@ -57,9 +60,11 @@ go build -o peak ./cmd/peak
 
 ## Roadmap
 
-- [ ] `peak deploy` — trigger deploy, stream progress from Himalaya API
-- [ ] `peak logs` — SSE log streaming
-- [ ] `peak status` — real health data from API
-- [ ] `peak login` — OAuth flow against Himalaya
+- [x] `peak login` — device-code auth flow against Himalaya (start/poll, token saved to `~/.peak/token`)
+- [x] `peak deploy` — archives the project, uploads it, and polls the Himalaya API for build/deploy progress
+- [x] `peak logs` — polls the Himalaya API for build logs, switching to container logs once the deployment is `ready`; `--follow` re-polls every 2s and prints only new output
+- [x] `peak status` — polls the Himalaya API for real deployment status, colored by state (ready/failed/in-progress)
 - [ ] `peak env set KEY=VALUE` — manage environment variables
 - [ ] `peak rollback` — roll back to previous deployment
+
+Log and status updates are polling-based (2s interval), not SSE streaming, and auth is a device-code flow rather than OAuth — see `internal/cli/logs.go`, `internal/cli/status.go`, and `internal/cli/login.go`.
