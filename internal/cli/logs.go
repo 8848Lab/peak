@@ -71,6 +71,9 @@ var logsCmd = &cobra.Command{
 		if !follow {
 			logs, _, err := fetchLogs()
 			if err != nil {
+				if aerr := authError(err); aerr != nil {
+					return aerr
+				}
 				return fmt.Errorf("could not fetch logs: %w", err)
 			}
 			fmt.Println(logs)
@@ -83,6 +86,9 @@ var logsCmd = &cobra.Command{
 		for {
 			logs, source, err := fetchLogs()
 			if err != nil {
+				if aerr := authError(err); aerr != nil {
+					return aerr
+				}
 				return fmt.Errorf("could not fetch logs: %w", err)
 			}
 			if source != lastSource {

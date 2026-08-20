@@ -36,6 +36,9 @@ var statusCmd = &cobra.Command{
 
 		deployment, err := client.GetDeployment(deploymentID)
 		if err != nil {
+			if aerr := authError(err); aerr != nil {
+				return aerr
+			}
 			return fmt.Errorf("could not fetch status: %w", err)
 		}
 

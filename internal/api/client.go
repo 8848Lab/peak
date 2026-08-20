@@ -12,9 +12,10 @@ import (
 
 // Client is the HTTP client for the Himalaya API
 type Client struct {
-	BaseURL    string
-	Token      string
-	httpClient *http.Client
+	BaseURL      string
+	Token        string
+	httpClient   *http.Client
+	uploadClient *http.Client
 }
 
 // NewClient creates an authenticated API client
@@ -24,6 +25,13 @@ func NewClient(baseURL, token string) *Client {
 		Token:   token,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
+		},
+		// Uploads (e.g. DeployLocal) can carry archives up to 250MB — the
+		// standard 30s client-wide timeout would abort large transfers
+		// mid-flight on an ordinary connection, so give uploads a much
+		// longer budget instead of reusing httpClient.
+		uploadClient: &http.Client{
+			Timeout: 10 * time.Minute,
 		},
 	}
 }
@@ -208,7 +216,7 @@ func (c *Client) DeployLocal(projectID string, archive io.Reader) (*Deployment, 
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.uploadClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

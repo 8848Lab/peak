@@ -53,6 +53,24 @@ func TarGz(dir string, w io.Writer) error {
 			return nil
 		}
 
+		if info.Mode()&os.ModeSymlink != 0 {
+			target, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			header, err := tar.FileInfoHeader(info, target)
+			if err != nil {
+				return err
+			}
+			header.Name = relSlash
+			return tw.WriteHeader(header)
+		}
+		if !info.Mode().IsRegular() && !info.IsDir() {
+			// Irregular file (socket, device, named pipe, etc.) — skip it
+			// rather than failing the whole archive.
+			return nil
+		}
+
 		header, err := tar.FileInfoHeader(info, "")
 		if err != nil {
 			return err

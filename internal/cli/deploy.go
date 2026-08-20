@@ -116,6 +116,9 @@ func uploadArchiveCmd(client *api.Client, projectID, archivePath string) tea.Cmd
 
 		deployment, err := client.DeployLocal(projectID, f)
 		if err != nil {
+			if aerr := authError(err); aerr != nil {
+				return deployFailedMsg{aerr}
+			}
 			return deployFailedMsg{err}
 		}
 		return deploymentCreatedMsg{deployment.ID}
@@ -126,6 +129,9 @@ func pollDeploymentCmd(client *api.Client, deploymentID string) tea.Cmd {
 	return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
 		deployment, err := client.GetDeployment(deploymentID)
 		if err != nil {
+			if aerr := authError(err); aerr != nil {
+				return deployFailedMsg{aerr}
+			}
 			return deployFailedMsg{err}
 		}
 		switch deployment.Status {
@@ -301,6 +307,9 @@ func resolveProjectLink(client *api.Client, dir string) (string, error) {
 
 	orgs, err := client.ListOrganizations()
 	if err != nil {
+		if aerr := authError(err); aerr != nil {
+			return "", aerr
+		}
 		return "", fmt.Errorf("could not list organizations: %w", err)
 	}
 	if len(orgs) == 0 {
@@ -335,6 +344,9 @@ func resolveProjectLink(client *api.Client, dir string) (string, error) {
 
 	project, err := client.CreateProject(api.CreateProjectRequest{OrganizationID: org.ID, Name: name})
 	if err != nil {
+		if aerr := authError(err); aerr != nil {
+			return "", aerr
+		}
 		return "", fmt.Errorf("could not create project: %w", err)
 	}
 

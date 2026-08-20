@@ -13,9 +13,11 @@ var rootCmd = &cobra.Command{
 	Long: `
   ▲ peak — by 8848 Lab
 
-  The CLI for Himalaya. Deploy apps, tail logs, 
+  The CLI for Himalaya. Deploy apps, tail logs,
   manage environments — from your terminal.
 `,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 func Execute() {
