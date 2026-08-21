@@ -1,15 +1,38 @@
 # peak ▲
 
-The official CLI for [Himalaya](https://8848lab.org) — by 8848 Lab.
+The official CLI for [Himalaya](https://8848lab.org) — deploy and manage your infrastructure from the terminal.
 
-Deploy and manage your infrastructure from the terminal.
+Built with Go + [Charm](https://charm.sh). Part of [8848 Lab](https://8848lab.org).
 
-```bash
+```
+$ peak login
 $ peak deploy
 $ peak logs --follow
 $ peak status my-project
-$ peak login
 ```
+
+---
+
+## Install
+
+```bash
+npm install -g @8848lab/peak@beta
+```
+
+Requires Node.js to install. The CLI itself is a native Go binary — Node is only used for distribution.
+
+---
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `peak login` | Authenticate with Himalaya via device-code flow |
+| `peak deploy` | Archive and deploy the current project |
+| `peak deploy --env staging` | Deploy to a specific environment |
+| `peak logs` | Fetch build and container logs |
+| `peak logs --follow` | Stream logs, re-polling every 2s |
+| `peak status <project>` | Check deployment status |
 
 ---
 
@@ -19,21 +42,23 @@ $ peak login
 peak/
 ├── cmd/peak/            # Entrypoint (main.go)
 ├── internal/
-│   ├── cli/             # All cobra commands
+│   ├── cli/             # Cobra commands
 │   │   ├── root.go      # Root command + Execute()
-│   │   ├── deploy.go    # `peak deploy` with bubbletea UI, project-link resolution
-│   │   ├── logs.go      # `peak logs` — polls build/container logs, --follow
-│   │   ├── status.go    # `peak status` — polls deployment status
+│   │   ├── deploy.go    # peak deploy — Bubbletea UI, project-link resolution
+│   │   ├── logs.go      # peak logs — polls build/container logs, --follow
+│   │   ├── status.go    # peak status — polls deployment status
 │   │   ├── resolve.go   # resolveDeploymentID — shared by logs/status
-│   │   └── login.go     # `peak login` — device-code auth flow
+│   │   └── login.go     # peak login — device-code auth flow
 │   ├── api/
-│   │   └── client.go    # Himalaya API client (device auth, projects, deployments)
+│   │   └── client.go    # Himalaya API client
 │   └── archive/
-│       └── archive.go   # tar.gz archiving of the current project for deploy
+│       └── archive.go   # tar.gz project archiving for deploy
 └── pkg/
     └── config/
-        └── config.go    # Token storage (~/.peak/) + per-directory project link (.peak/project.json)
+        └── config.go    # Token storage (~/.peak/) + project linking (.peak/project.json)
 ```
+
+---
 
 ## Stack
 
@@ -42,29 +67,29 @@ peak/
 - [`lipgloss`](https://github.com/charmbracelet/lipgloss) — terminal styling
 - [`bubbles`](https://github.com/charmbracelet/bubbles) — spinner, input components
 
-## Getting Started
+---
+
+## Local Development
 
 ```bash
-# Install dependencies
 go mod tidy
-
-# Build
 go build -o peak ./cmd/peak
-
-# Run
-./peak deploy
-./peak deploy --env staging
-./peak logs --follow
-./peak status my-project
+./peak --help
 ```
+
+---
 
 ## Roadmap
 
-- [x] `peak login` — device-code auth flow against Himalaya (start/poll, token saved to `~/.peak/token`)
-- [x] `peak deploy` — archives the project, uploads it, and polls the Himalaya API for build/deploy progress
-- [x] `peak logs` — polls the Himalaya API for build logs, switching to container logs once the deployment is `ready`; `--follow` re-polls every 2s and prints only new output
-- [x] `peak status` — polls the Himalaya API for real deployment status, colored by state (ready/failed/in-progress)
+- [x] `peak login` — device-code auth, token saved to `~/.peak/token`
+- [x] `peak deploy` — archives project, uploads, polls for build/deploy progress
+- [x] `peak logs` — polls build logs, switches to container logs on `ready`; `--follow` streams
+- [x] `peak status` — real-time deployment status, coloured by state
 - [ ] `peak env set KEY=VALUE` — manage environment variables
 - [ ] `peak rollback` — roll back to previous deployment
 
-Log and status updates are polling-based (2s interval), not SSE streaming, and auth is a device-code flow rather than OAuth — see `internal/cli/logs.go`, `internal/cli/status.go`, and `internal/cli/login.go`.
+---
+
+## License
+
+MIT © [8848 Lab](https://8848lab.org)
