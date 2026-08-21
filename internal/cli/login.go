@@ -117,12 +117,12 @@ func (m loginModel) View() string {
 
 	switch m.status {
 	case "starting":
-		return fmt.Sprintf("\n  %s\n\n  %s %s\n\n", tag.Render("▲ peak login"), m.spinner.View(), dim.Render("Starting..."))
+		return fmt.Sprintf("\n  %s\n\n  %s %s\n\n", tag.Render("⛰ 8848 peak login"), m.spinner.View(), dim.Render("Starting..."))
 	case "waiting":
 		url := fmt.Sprintf("%s?user_code=%s", m.start.VerificationURI, m.start.UserCode)
 		return fmt.Sprintf(
 			"\n  %s\n\n  %s\n  %s\n\n  %s %s\n\n",
-			tag.Render("▲ peak login"),
+			tag.Render("⛰ 8848 peak login"),
 			dim.Render("Opening your browser to confirm:"),
 			lipgloss.NewStyle().Bold(true).Render(url),
 			m.spinner.View(),

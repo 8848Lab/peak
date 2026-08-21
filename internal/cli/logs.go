@@ -49,7 +49,7 @@ var logsCmd = &cobra.Command{
 
 		dim := lipgloss.NewStyle().Foreground(mutedText)
 		tag := lipgloss.NewStyle().Foreground(orange).Bold(true)
-		fmt.Printf("%s  logs for %s\n\n", tag.Render("▲ peak"), deploymentID)
+		fmt.Printf("%s  logs for %s\n\n", tag.Render("⛰ 8848 peak"), deploymentID)
 
 		fetchLogs := func() (string, logSource, error) {
 			deployment, err := client.GetDeployment(deploymentID)

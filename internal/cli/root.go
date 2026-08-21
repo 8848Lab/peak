@@ -11,7 +11,7 @@ var rootCmd = &cobra.Command{
 	Use:   "peak",
 	Short: "Peak — deploy and manage your infra via 8848 Lab",
 	Long: `
-  ▲ peak — by 8848 Lab
+  ⛰ peak — by 8848 Lab
 
   The CLI for Himalaya. Deploy apps, tail logs,
   manage environments — from your terminal.

@@ -59,7 +59,7 @@ var statusCmd = &cobra.Command{
 			url = *deployment.DeploymentURL
 		}
 
-		fmt.Printf("\n  %s\n\n", lipgloss.NewStyle().Foreground(orange).Bold(true).Render("▲ peak status"))
+		fmt.Printf("\n  %s\n\n", lipgloss.NewStyle().Foreground(orange).Bold(true).Render("⛰ 8848 peak status"))
 		fmt.Printf("  %s  %s\n", label.Render("deployment"), value.Render(deployment.ID))
 		fmt.Printf("  %s  %s\n", label.Render("status    "), statusStyle.Render("● "+deployment.Status))
 		fmt.Printf("  %s  %s\n\n", label.Render("url       "), value.Render(url))
